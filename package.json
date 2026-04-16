@@ -1,0 +1,26 @@
+{
+	"name": "promocode-manager",
+	"version": "1.0.0",
+	"private": true,
+	"packageManager": "pnpm@8.15.0",
+	"scripts": {
+		"install:all": "pnpm install",
+		"dev:backend": "pnpm --filter promocode-backend run start:dev",
+		"dev:frontend": "pnpm --filter promocode-frontend run dev",
+		"build:backend": "pnpm --filter promocode-backend run build",
+		"build:frontend": "pnpm --filter promocode-frontend run build",
+		"docker:up": "docker-compose up -d",
+		"docker:down": "docker-compose down",
+		"docker:logs": "docker-compose logs -f",
+		"docker:clean": "docker-compose down -v"
+	},
+	"keywords": [
+		"promocode",
+		"cqrs",
+		"nestjs",
+		"react",
+		"clickhouse",
+		"mongodb",
+		"redis"
+	]
+}
