@@ -18,8 +18,10 @@ jest.mock('bcrypt', () => ({
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeUserDoc(overrides: Record<string, unknown> = {}) {
-	return {
-		id: 'mock-id-123',
+	const resolvedId = (overrides.id as string) ?? 'mock-id-123'
+	const base = {
+		id: resolvedId,
+		_id: { toString: () => resolvedId },
 		email: 'user@example.com',
 		name: 'John Doe',
 		phone: '+79001234567',
@@ -29,6 +31,7 @@ function makeUserDoc(overrides: Record<string, unknown> = {}) {
 		updatedAt: new Date('2024-01-01'),
 		...overrides,
 	}
+	return { ...base, toObject: () => base }
 }
 
 // ── Arbitraries ───────────────────────────────────────────────────────────────

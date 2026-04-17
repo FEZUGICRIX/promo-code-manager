@@ -3,6 +3,9 @@ import { appConfig, mongooseConfig, throttlerConfig } from './config'
 import { ClickhouseModule } from './clickhouse/clickhouse.module'
 import { RedisModule } from './redis/redis.module'
 import { AuthModule } from '../modules/auth/auth.module'
+import { UsersModule } from '../modules/users/users.module'
+import { PromocodesModule } from '../modules/promocodes/promocodes.module'
+import { OrdersModule } from '../modules/orders/orders.module'
 
 @Module({
 	imports: [
@@ -11,8 +14,10 @@ import { AuthModule } from '../modules/auth/auth.module'
 		throttlerConfig,
 		ClickhouseModule,
 		RedisModule,
-		
-		AuthModule
+		AuthModule,
+		UsersModule,
+		PromocodesModule,
+		OrdersModule,
 	],
 })
 export class CoreModule {}
