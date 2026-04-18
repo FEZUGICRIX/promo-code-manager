@@ -9,23 +9,7 @@ import { RegisterDTO } from './dto/register.dto'
 import { LoginDTO } from './dto/login.dto'
 import { User, UserDocument } from './schemas/user.schema'
 import { JwtPayload } from './strategies/jwt.strategy'
-
-// TODO: ВЫНЕСТИ
-export interface UserResponse {
-	id: string
-	email: string
-	name: string
-	phone: string
-	isActive: boolean
-	createdAt: Date
-	updatedAt: Date
-}
-
-// TODO: ВЫНЕСТИ
-export interface AuthTokens {
-	accessToken: string
-	refreshToken: string
-}
+import { AuthTokens, UserResponse } from './interfaces'
 
 @Injectable()
 export class AuthService {
