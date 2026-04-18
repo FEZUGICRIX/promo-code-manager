@@ -65,6 +65,7 @@ export class AuthService {
 			throw new UnauthorizedException('Account is disabled')
 		}
 
+		// Return both tokens (controller will handle cookie setting)
 		return this.generateTokens({ sub: doc.id as string, email: doc.email })
 	}
 

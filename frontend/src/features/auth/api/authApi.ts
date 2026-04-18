@@ -12,18 +12,22 @@ export const authApi = {
 		return data
 	},
 
-	// TODO: НЕ ХРАНИТЬ accessToken и refreshToken в localStorage
-	logout: () => {
+	logout: async () => {
+		// Call backend to clear the HttpOnly cookie
+		try {
+			await api.post('/auth/logout')
+		} catch (error) {
+			console.error('Logout error:', error)
+		}
+		// Clear accessToken from localStorage
 		localStorage.removeItem('accessToken')
-		localStorage.removeItem('refreshToken')
 	},
 
-	saveTokens: (accessToken: string, refreshToken: string) => {
+	saveTokens: (accessToken: string) => {
+		// Only save accessToken - refreshToken is in HttpOnly cookie
 		localStorage.setItem('accessToken', accessToken)
-		localStorage.setItem('refreshToken', refreshToken)
 	},
 
-	// TODO: НЕ ХРАНИТЬ accessToken и refreshToken в localStorage
 	isAuthenticated: (): boolean => {
 		const token = localStorage.getItem('accessToken')
 		if (!token) return false

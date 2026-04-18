@@ -14,6 +14,6 @@ export interface RegisterDto {
 
 export interface AuthResponse {
 	accessToken: string
-	refreshToken: string
-	user: User
+	// refreshToken is now in HttpOnly cookie, not in response
+	user?: User // Optional for login, present for register
 }

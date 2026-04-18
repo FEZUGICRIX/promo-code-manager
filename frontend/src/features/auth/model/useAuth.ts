@@ -9,20 +9,28 @@ export function useAuth() {
 
 	const login = useCallback(async (dto: LoginDto) => {
 		const response = await authApi.login(dto)
-		authApi.saveTokens(response.accessToken, response.refreshToken)
-		setUser(response.user)
+		// Only save accessToken - refreshToken is in HttpOnly cookie
+		authApi.saveTokens(response.accessToken)
+		// User is optional in login response
+		if (response.user) {
+			setUser(response.user)
+		}
 		return response
 	}, [])
 
 	const register = useCallback(async (dto: RegisterDto) => {
 		const response = await authApi.register(dto)
-		authApi.saveTokens(response.accessToken, response.refreshToken)
-		setUser(response.user)
+		// Only save accessToken - refreshToken is in HttpOnly cookie
+		authApi.saveTokens(response.accessToken)
+		// User is present in register response
+		if (response.user) {
+			setUser(response.user)
+		}
 		return response
 	}, [])
 
-	const logout = useCallback(() => {
-		authApi.logout()
+	const logout = useCallback(async () => {
+		await authApi.logout()
 		setUser(null)
 		window.location.href = '/login'
 	}, [])

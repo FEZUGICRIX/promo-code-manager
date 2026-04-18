@@ -1,16 +1,20 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import cookieParser from 'cookie-parser'
 import { CoreModule } from '@/core/core.module'
+import { createCorsOptions } from './core/config'
+import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
 	const app = await NestFactory.create(CoreModule)
+	const config = app.get(ConfigService)
 
-	// CORS
-	app.enableCors({
-		origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-		credentials: true,
-	})
+	// Cookie parser middleware
+	app.use(cookieParser())
+
+	// CORS with credentials support
+	app.enableCors(createCorsOptions(config))
 
 	// Global validation pipe
 	app.useGlobalPipes(
@@ -22,13 +26,13 @@ async function bootstrap() {
 	)
 
 	// Swagger
-	const config = new DocumentBuilder()
+	const configSwagger = new DocumentBuilder()
 		.setTitle('PromoCode Manager API')
 		.setDescription('API для управления промокодами с аналитикой')
 		.setVersion('1.0')
 		.addBearerAuth()
 		.build()
-	const document = SwaggerModule.createDocument(app, config)
+	const document = SwaggerModule.createDocument(app, configSwagger)
 	SwaggerModule.setup('api', app, document)
 
 	const port = process.env.PORT || 3000
