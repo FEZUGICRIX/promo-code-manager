@@ -1,5 +1,14 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, Tag, ShoppingCart, History, LogOut, BarChart } from 'lucide-react'
+import {
+	LayoutDashboard,
+	Users,
+	Tag,
+	ShoppingCart,
+	History,
+	LogOut,
+	BarChart,
+	Percent,
+} from 'lucide-react'
 import { cn } from '@/shared/lib'
 import { useAuth } from '@/features/auth'
 
@@ -10,6 +19,7 @@ const navItems = [
 	{ to: '/orders', label: 'Заказы', icon: ShoppingCart },
 	{ to: '/promo-usages', label: 'История', icon: History },
 	{ to: '/users-intelligence', label: 'Users Intelligence', icon: BarChart },
+	{ to: '/promocodes-lifecycle', label: 'Promocodes Lifecycle', icon: Percent },
 ]
 
 export function Sidebar() {

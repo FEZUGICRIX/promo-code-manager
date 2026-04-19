@@ -4,8 +4,11 @@ import { QueryResult } from './types'
 
 export class PromocodesQueryBuilder {
 	/**
-	 * Builds optimized promocodes query with CTE to avoid JOIN multiplication
-	 * Uses subqueries for aggregations instead of LEFT JOIN before pagination
+	 * Builds optimized promocodes query with proper deduplication using argMax.
+	 *
+	 * ClickHouse constraint: MergeTree doesn't deduplicate automatically.
+	 * Each update/deactivation inserts a new row, so we must pick the latest
+	 * version of each promocode via argMax(field, updatedAt).
 	 */
 	static buildPromocodesQuery(
 		dto: PromocodesQueryDTO,
@@ -15,9 +18,7 @@ export class PromocodesQueryBuilder {
 		const page = dto.page ?? 1
 		const pageSize = dto.pageSize ?? 10
 		const offset = (page - 1) * pageSize
-		const sortBy = PROMOCODES_SORT_COLUMNS.includes(dto.sortBy as never)
-			? dto.sortBy!
-			: 'createdAt'
+		const sortBy = PROMOCODES_SORT_COLUMNS.includes(dto.sortBy as never) ? dto.sortBy! : 'createdAt'
 		const sortOrder = dto.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC'
 
 		const params: Record<string, unknown> = {
@@ -27,66 +28,121 @@ export class PromocodesQueryBuilder {
 			offset,
 		}
 
-		// Build WHERE conditions
-		const conditions: string[] = [
-			'createdAt >= {dateFrom:DateTime}',
-			'createdAt <= {dateTo:DateTime}',
-		]
+		// Filter conditions applied AFTER deduplication
+		const filterConditions: string[] = []
 
 		if (dto.isActive !== undefined) {
 			params.isActive = dto.isActive ? 1 : 0
-			conditions.push('isActive = {isActive:UInt8}')
+			filterConditions.push('last_status = {isActive:UInt8}')
 		}
 
 		if (dto.search) {
 			params.search = `%${dto.search}%`
-			conditions.push('ilike(code, {search:String})')
+			filterConditions.push('ilike(code, {search:String})')
 		}
 
-		const whereClause = conditions.join(' AND ')
+		const filterClause = filterConditions.length > 0 ? `AND ${filterConditions.join(' AND ')}` : ''
 
 		/**
-		 * Optimized query using CTE:
-		 * 1. Filter and paginate promocodes first (base_promocodes)
-		 * 2. Then aggregate promo_usages only for selected promocodes
-		 * This avoids multiplying promocode rows before pagination
+		 * Query strategy (mirrors users.query-builder.ts):
+		 * 1. Subquery filters by createdAt date range BEFORE deduplication
+		 * 2. CTE deduplicates using argMax(field, updatedAt) — picks latest row per id
+		 * 3. Pre-aggregate promo_usages by promocodeId (no row multiplication)
+		 * 4. LEFT JOIN aggregated stats onto deduplicated promocodes
+		 * 5. Filter by isActive / search, then paginate
 		 */
 		const sql = `
 WITH
-    base_promocodes AS (
+    latest_promocodes AS (
         SELECT
             id,
-            code,
-            discount,
-            totalLimit,
-            userLimit,
-            isActive,
-            createdAt
-        FROM promocode_analytics.promocodes
-        WHERE ${whereClause}
+            argMax(code, updatedAt)       AS code,
+            argMax(discount, updatedAt)   AS discount,
+            argMax(totalLimit, updatedAt) AS totalLimit,
+            argMax(userLimit, updatedAt)  AS userLimit,
+            argMax(dateFrom, updatedAt)   AS dateFrom,
+            argMax(dateTo, updatedAt)     AS dateTo,
+            argMax(isActive, updatedAt)   AS last_status,
+            any(createdAt)                AS createdAt
+        FROM (
+            SELECT *
+            FROM promocode_analytics.promocodes
+            WHERE createdAt >= {dateFrom:DateTime}
+              AND createdAt <= {dateTo:DateTime}
+        )
+        GROUP BY id
+    ),
+    promo_agg AS (
+        SELECT
+            promocodeId,
+            count()            AS usageCount,
+            sum(orderAmount)   AS totalRevenue,
+            uniq(userId)       AS uniqueUsers,
+            sum(discountAmount) AS totalDiscount
+        FROM promocode_analytics.promo_usages
+        GROUP BY promocodeId
+    ),
+    promocodes_with_stats AS (
+        SELECT
+            p.id,
+            p.code,
+            p.discount,
+            p.totalLimit,
+            p.userLimit,
+            p.dateFrom,
+            p.dateTo,
+            p.last_status,
+            p.createdAt,
+            coalesce(a.usageCount, 0)    AS usageCount,
+            coalesce(a.totalRevenue, 0)  AS totalRevenue,
+            coalesce(a.uniqueUsers, 0)   AS uniqueUsers,
+            coalesce(a.totalDiscount, 0) AS totalDiscount
+        FROM latest_promocodes p
+        LEFT JOIN promo_agg a ON p.id = a.promocodeId
+    ),
+    filtered_promocodes AS (
+        SELECT *
+        FROM promocodes_with_stats
+        WHERE 1=1 ${filterClause}
         ORDER BY ${sortBy} ${sortOrder}
         LIMIT {pageSize:UInt32} OFFSET {offset:UInt32}
     )
 SELECT
-    p.id,
-    p.code,
-    p.discount,
-    p.totalLimit,
-    p.userLimit,
-    p.isActive,
-    p.createdAt,
-    (SELECT count() FROM promocode_analytics.promo_usages WHERE promocodeId = p.id) AS usageCount,
-    (SELECT sum(orderAmount) FROM promocode_analytics.promo_usages WHERE promocodeId = p.id) AS totalRevenue,
-    (SELECT uniq(userId) FROM promocode_analytics.promo_usages WHERE promocodeId = p.id) AS uniqueUsers,
-    (SELECT sum(discountAmount) FROM promocode_analytics.promo_usages WHERE promocodeId = p.id) AS totalDiscount
-FROM base_promocodes p
+    id,
+    code,
+    discount,
+    totalLimit,
+    userLimit,
+    dateFrom,
+    dateTo,
+    last_status AS isActive,
+    createdAt,
+    usageCount,
+    totalRevenue,
+    uniqueUsers,
+    totalDiscount
+FROM filtered_promocodes
 ORDER BY ${sortBy} ${sortOrder}
 `.trim()
 
 		const countSql = `
+WITH
+    latest_promocodes AS (
+        SELECT
+            id,
+            argMax(isActive, updatedAt) AS last_status,
+            argMax(code, updatedAt)     AS code
+        FROM (
+            SELECT *
+            FROM promocode_analytics.promocodes
+            WHERE createdAt >= {dateFrom:DateTime}
+              AND createdAt <= {dateTo:DateTime}
+        )
+        GROUP BY id
+    )
 SELECT count() AS total
-FROM promocode_analytics.promocodes
-WHERE ${whereClause}
+FROM latest_promocodes
+WHERE 1=1 ${filterClause}
 `.trim()
 
 		return { sql, countSql, params }

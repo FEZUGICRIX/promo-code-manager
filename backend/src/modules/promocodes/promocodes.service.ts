@@ -19,7 +19,7 @@ export class PromocodesService {
 	async create(dto: CreatePromocodeDTO): Promise<PromocodeDocument> {
 		try {
 			const promo = await this.promocodeModel.create(dto)
-			void this.syncToClickHouse(promo)
+			await this.syncToClickHouse(promo)
 			return promo
 		} catch (err: unknown) {
 			const mongoErr = err as { code?: number }
@@ -60,7 +60,7 @@ export class PromocodesService {
 		}
 		promo.set(dto)
 		await promo.save()
-		void this.syncToClickHouse(promo)
+		await this.syncToClickHouse(promo)
 		return promo
 	}
 
@@ -71,7 +71,7 @@ export class PromocodesService {
 		}
 		promo.set({ isActive: false })
 		await promo.save()
-		void this.syncToClickHouse(promo)
+		await this.syncToClickHouse(promo)
 		return promo
 	}
 

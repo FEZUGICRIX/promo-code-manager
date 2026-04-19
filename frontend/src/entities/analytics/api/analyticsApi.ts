@@ -5,6 +5,8 @@ import type {
 	AnalyticsUser,
 	UsersAnalyticsParams,
 	UsersSummaryResponse,
+	AnalyticsPromocode,
+	PromocodesAnalyticsParams,
 } from '../model/types'
 
 /**
@@ -26,6 +28,19 @@ export const analyticsApi = {
 	 */
 	async getUsers(params: UsersAnalyticsParams): Promise<PaginatedResponse<AnalyticsUser>> {
 		const { data } = await api.get<PaginatedResponse<AnalyticsUser>>('/analytics/users', {
+			params: cleanParams(params),
+		})
+		return data
+	},
+
+	/**
+	 * Получить список промокодов с аналитическими данными
+	 * GET /analytics/promocodes
+	 */
+	async getPromocodes(
+		params: PromocodesAnalyticsParams,
+	): Promise<PaginatedResponse<AnalyticsPromocode>> {
+		const { data } = await api.get<PaginatedResponse<AnalyticsPromocode>>('/analytics/promocodes', {
 			params: cleanParams(params),
 		})
 		return data

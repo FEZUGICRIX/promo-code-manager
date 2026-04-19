@@ -12,7 +12,7 @@ interface StatusFilterProps {
  * Компонент фильтрации пользователей по статусу активности
  *
  * Предоставляет выпадающий список с тремя опциями:
- * - All Users (undefined — без фильтрации)
+ * - All (undefined — без фильтрации)
  * - Active Only (true — только активные)
  * - Inactive Only (false — только неактивные)
  *
@@ -44,7 +44,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
 				onChange={handleChange}
 				className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 			>
-				<option value='all'>All Users</option>
+				<option value='all'>All</option>
 				<option value='true'>Active Only</option>
 				<option value='false'>Inactive Only</option>
 			</select>

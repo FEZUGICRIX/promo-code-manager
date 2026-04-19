@@ -120,6 +120,8 @@ export interface AnalyticsPromocode {
 	userLimit: number
 	isActive: boolean
 	createdAt: string
+	dateTo?: string
+	dateFrom?: string
 	usageCount: number
 	totalRevenue: number
 	uniqueUsers: number
