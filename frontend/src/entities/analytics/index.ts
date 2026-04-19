@@ -18,11 +18,19 @@ export type {
 	PromoUsagesSortColumn,
 	PromoUsagesAnalyticsParams,
 	AnalyticsPromoUsage,
+	UsersSummaryResponse,
 } from './model/types'
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
-export { useAnalyticsQuery } from './lib/useAnalyticsQuery'
+export { useAnalyticsQuery } from './api/hooks/useAnalyticsQuery'
+export { useUsersSummary } from './api/hooks/useUsersSummary'
+export { useUsersAnalytics } from './api/hooks/useUsersAnalytics'
 
-// ─── API Utilities ────────────────────────────────────────────────────────────
+// ─── UI ───────────────────────────────────────────────────────────────────────
+export { UserStatusBadge } from './ui/UserStatusBadge'
+
+// ─── Column Definitions ───────────────────────────────────────────────────────
+export { usersTableColumns } from './model/columns'
+
+// ─── API Utilities (internal use only — not re-exported) ──────────────────────
 export { createAnalyticsQueryKey } from './api/query-keys'
-export { cleanParams } from './api/analytics.service'

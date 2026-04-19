@@ -2,13 +2,14 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
 import { AnalyticsService } from './analytics.service'
-import { PromoUsagesQueryDTO } from './dto/promo-usages-query.dto'
-import { PromocodesQueryDTO } from './dto/promocodes-query.dto'
-import { UsersQueryDTO } from './dto/users-query.dto'
-import { AnalyticsPromoUsage } from './interfaces/analytics-promo-usage.interface'
-import { AnalyticsPromocode } from './interfaces/analytics-promocode.interface'
-import { AnalyticsUser } from './interfaces/analytics-user.interface'
-import { PaginatedResponse } from './interfaces/paginated-response.interface'
+import type {
+	AnalyticsPromoUsage,
+	AnalyticsPromocode,
+	AnalyticsUser,
+	PaginatedResponse,
+	UsersSummaryResponse,
+} from './interfaces'
+import { PromoUsagesQueryDTO, PromocodesQueryDTO, UsersQueryDTO } from './dto'
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
@@ -30,5 +31,13 @@ export class AnalyticsController {
 		@Query() dto: PromoUsagesQueryDTO,
 	): Promise<PaginatedResponse<AnalyticsPromoUsage>> {
 		return this.analyticsService.getPromoUsages(dto)
+	}
+
+	@Get('users/summary')
+	getUsersSummary(
+		@Query('dateFrom') dateFrom?: string,
+		@Query('dateTo') dateTo?: string,
+	): Promise<UsersSummaryResponse> {
+		return this.analyticsService.getUsersSummary(dateFrom, dateTo)
 	}
 }

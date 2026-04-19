@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cleanParams } from '../analytics.service'
+import { cleanParams } from '@/shared/lib'
 
 describe('cleanParams', () => {
 	it('should remove undefined values', () => {

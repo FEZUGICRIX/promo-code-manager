@@ -150,7 +150,7 @@ export function AnalyticsTable<TData, TParams extends BaseAnalyticsParams>({
 				}}
 				onPaginationChange={handlePaginationChange}
 				sorting={{
-					sortBy: (params as any).sortBy || '',
+					sortBy: (params as any).sortBy || '', // TODO: убрать any!!!
 					sortOrder: params.sortOrder,
 				}}
 				onSortingChange={handleSortingChange}

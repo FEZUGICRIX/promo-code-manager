@@ -67,8 +67,8 @@ export function Pagination({
 	}
 
 	const handlePageSizeChange = (newPageSize: number) => {
+		// Call onPageSizeChange which will handle both pageSize and page reset
 		onPageSizeChange(newPageSize)
-		onPageChange(1)
 	}
 
 	const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1

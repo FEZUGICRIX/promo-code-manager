@@ -169,3 +169,14 @@ export interface AnalyticsPromoUsage {
 	discountAmount: number
 	createdAt: string
 }
+
+// ─── Summary Response ─────────────────────────────────────────────────────────
+
+/**
+ * Интерфейс ответа с агрегированными метриками пользователей
+ */
+export interface UsersSummaryResponse {
+	totalUsers: number
+	activeUsers: number
+	averageCheck: number
+}

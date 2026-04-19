@@ -1,0 +1,5 @@
+export type { AnalyticsUser } from './analytics-user.interface'
+export type { AnalyticsPromocode } from './analytics-promocode.interface'
+export type { AnalyticsPromoUsage } from './analytics-promo-usage.interface'
+export type { PaginatedResponse } from './paginated-response.interface'
+export type { UsersSummaryResponse } from './users-summary-response.interface'

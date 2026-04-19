@@ -12,7 +12,8 @@ import { ErrorState } from '../error-state/ErrorState'
 import { Pagination } from '../pagination/Pagination'
 
 interface DataTableProps<TData> {
-	columns: ColumnDef<TData>[]
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	columns: ColumnDef<TData, any>[]
 	data: TData[]
 	isLoading: boolean
 	isError: boolean
@@ -36,6 +37,10 @@ interface DataTableProps<TData> {
 	// Дополнительно
 	onRetry?: () => void
 	emptyMessage?: string
+	/** Optional row click handler. When provided, rows show a pointer cursor and hover effect. */
+	onRowClick?: (row: TData) => void
+	/** Optional filters to display above the table */
+	filters?: React.ReactNode
 }
 
 /**
@@ -55,6 +60,7 @@ interface DataTableProps<TData> {
  * @param onSortingChange - Callback when sorting changes
  * @param onRetry - Callback to retry failed data fetch
  * @param emptyMessage - Message to display when data is empty
+ * @param filters - Optional filters to display above the table
  *
  * @example
  * ```tsx
@@ -69,6 +75,7 @@ interface DataTableProps<TData> {
  *   sorting={{ sortBy: 'name', sortOrder: 'ASC' }}
  *   onSortingChange={(sortBy, sortOrder) => setParams({ sortBy, sortOrder })}
  *   onRetry={() => refetch()}
+ *   filters={<DateRangeFilter ... />}
  * />
  * ```
  */
@@ -84,6 +91,8 @@ export function DataTable<TData>({
 	onSortingChange,
 	onRetry,
 	emptyMessage = 'Данные не найдены',
+	onRowClick,
+	filters,
 }: DataTableProps<TData>) {
 	// Преобразуем sorting в формат TanStack Table
 	const sortingState: SortingState = sorting
@@ -111,21 +120,6 @@ export function DataTable<TData>({
 		},
 	})
 
-	// Состояние загрузки
-	if (isLoading) {
-		return <TableSkeleton columns={columns.length} rows={pagination.pageSize} />
-	}
-
-	// Состояние ошибки
-	if (isError) {
-		return <ErrorState error={error} onRetry={onRetry} />
-	}
-
-	// Пустое состояние
-	if (data.length === 0) {
-		return <EmptyState message={emptyMessage} />
-	}
-
 	// Обработчик клика на заголовок колонки для сортировки
 	const handleSort = (columnId: string) => {
 		if (!onSortingChange) return
@@ -140,79 +134,108 @@ export function DataTable<TData>({
 		}
 	}
 
+	// Обработчики пагинации
+	const handlePageChange = (page: number) => {
+		onPaginationChange(page, pagination.pageSize)
+	}
+
+	const handlePageSizeChange = (pageSize: number) => {
+		onPaginationChange(1, pageSize)
+	}
+
 	return (
 		<div className='space-y-4'>
-			{/* Таблица */}
-			<div className='rounded-md border'>
-				<table className='w-full'>
-					<thead className='bg-gray-50'>
-						{table.getHeaderGroups().map((headerGroup) => (
-							<tr key={headerGroup.id}>
-								{headerGroup.headers.map((header) => {
-									const canSort = header.column.getCanSort()
-									const isSorted = sorting?.sortBy === header.column.id
-									const sortOrder = isSorted ? sorting.sortOrder : null
+			{/* Filters - always visible */}
+			{filters && <div className='bg-white p-4 rounded-lg border border-gray-200'>{filters}</div>}
 
-									return (
-										<th
-											key={header.id}
-											className='px-4 py-3 text-left text-sm font-medium text-gray-700'
-										>
-											{header.isPlaceholder ? null : (
-												<div
-													className={`flex items-center gap-2 ${
-														canSort && onSortingChange
-															? 'cursor-pointer select-none hover:text-gray-900'
-															: ''
-													}`}
-													onClick={() => {
-														if (canSort && onSortingChange) {
-															handleSort(header.column.id)
-														}
-													}}
+			{/* Loading state */}
+			{isLoading && <TableSkeleton columns={columns.length} rows={pagination.pageSize} />}
+
+			{/* Error state */}
+			{!isLoading && isError && <ErrorState error={error} onRetry={onRetry} />}
+
+			{/* Empty state */}
+			{!isLoading && !isError && data.length === 0 && <EmptyState message={emptyMessage} />}
+
+			{/* Table with data */}
+			{!isLoading && !isError && data.length > 0 && (
+				<>
+					<div className='rounded-md border'>
+						<table className='w-full'>
+							<thead className='bg-gray-50'>
+								{table.getHeaderGroups().map((headerGroup) => (
+									<tr key={headerGroup.id}>
+										{headerGroup.headers.map((header) => {
+											const canSort = header.column.getCanSort()
+											const isSorted = sorting?.sortBy === header.column.id
+											const sortOrder = isSorted ? sorting.sortOrder : null
+
+											return (
+												<th
+													key={header.id}
+													className='px-4 py-3 text-left text-sm font-medium text-gray-700'
 												>
-													{flexRender(header.column.columnDef.header, header.getContext())}
-													{canSort && onSortingChange && (
-														<span className='flex flex-col'>
-															{isSorted && sortOrder === 'ASC' ? (
-																<ChevronUp className='h-4 w-4 text-gray-900' />
-															) : isSorted && sortOrder === 'DESC' ? (
-																<ChevronDown className='h-4 w-4 text-gray-900' />
-															) : (
-																<ChevronDown className='h-4 w-4 text-gray-400' />
+													{header.isPlaceholder ? null : (
+														<div
+															className={`flex items-center gap-2 ${
+																canSort && onSortingChange
+																	? 'cursor-pointer select-none hover:text-gray-900'
+																	: ''
+															}`}
+															onClick={() => {
+																if (canSort && onSortingChange) {
+																	handleSort(header.column.id)
+																}
+															}}
+														>
+															{flexRender(header.column.columnDef.header, header.getContext())}
+															{canSort && onSortingChange && (
+																<span className='flex flex-col'>
+																	{isSorted && sortOrder === 'ASC' ? (
+																		<ChevronUp className='h-4 w-4 text-gray-900' />
+																	) : isSorted && sortOrder === 'DESC' ? (
+																		<ChevronDown className='h-4 w-4 text-gray-900' />
+																	) : (
+																		<ChevronDown className='h-4 w-4 text-gray-400' />
+																	)}
+																</span>
 															)}
-														</span>
+														</div>
 													)}
-												</div>
-											)}
-										</th>
-									)
-								})}
-							</tr>
-						))}
-					</thead>
-					<tbody className='divide-y divide-gray-200 bg-white'>
-						{table.getRowModel().rows.map((row) => (
-							<tr key={row.id} className='hover:bg-gray-50'>
-								{row.getVisibleCells().map((cell) => (
-									<td key={cell.id} className='px-4 py-3 text-sm text-gray-900'>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</td>
+												</th>
+											)
+										})}
+									</tr>
 								))}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+							</thead>
+							<tbody className='divide-y divide-gray-200 bg-white'>
+								{table.getRowModel().rows.map((row) => (
+									<tr
+										key={row.id}
+										className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
+										onClick={() => onRowClick?.(row.original)}
+									>
+										{row.getVisibleCells().map((cell) => (
+											<td key={cell.id} className='px-4 py-3 text-sm text-gray-900'>
+												{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											</td>
+										))}
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 
-			{/* Пагинация */}
-			<Pagination
-				page={pagination.page}
-				pageSize={pagination.pageSize}
-				total={pagination.total}
-				onPageChange={(page) => onPaginationChange(page, pagination.pageSize)}
-				onPageSizeChange={(pageSize) => onPaginationChange(1, pageSize)}
-			/>
+					{/* Pagination */}
+					<Pagination
+						page={pagination.page}
+						pageSize={pagination.pageSize}
+						total={pagination.total}
+						onPageChange={handlePageChange}
+						onPageSizeChange={handlePageSizeChange}
+					/>
+				</>
+			)}
 		</div>
 	)
 }

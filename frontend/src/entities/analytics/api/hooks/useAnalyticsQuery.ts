@@ -1,8 +1,8 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query'
 import { api } from '@/shared/api/instance'
-import { createAnalyticsQueryKey } from '../api/query-keys'
-import { cleanParams } from '../api/analytics.service'
-import type { BaseAnalyticsParams, PaginatedResponse } from '../model/types'
+import { cleanParams } from '@/shared/lib'
+import { createAnalyticsQueryKey } from '../query-keys'
+import type { BaseAnalyticsParams, PaginatedResponse } from '../../model/types'
 
 /**
  * Generic хук для запросов аналитических данных с использованием TanStack Query

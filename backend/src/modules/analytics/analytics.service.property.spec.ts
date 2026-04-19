@@ -4,6 +4,8 @@ import fc from 'fast-check'
 import { ClickhouseService } from '@/core/clickhouse/clickhouse.service'
 import { RedisService } from '@/core/redis/redis.service'
 import { AnalyticsService } from './analytics.service'
+import { UsersQueryBuilder, PromocodesQueryBuilder, PromoUsagesQueryBuilder } from './builders'
+import { CacheHelper, DateRangeHelper } from './helpers'
 
 // ---------------------------------------------------------------------------
 // Test suite
@@ -120,9 +122,14 @@ describe('AnalyticsService — Property-Based Tests', () => {
 		// SQL template (built without user values).
 
 		// Get the static SQL templates (no search, no dates that could collide)
-		const staticUsers = service.buildUsersQuery({})
-		const staticPromocodes = service.buildPromocodesQuery({})
-		const staticPromoUsages = service.buildPromoUsagesQuery({})
+		const { dateFrom: defaultFrom, dateTo: defaultTo } = DateRangeHelper.resolveDateRange()
+		const staticUsers = UsersQueryBuilder.buildUsersQuery({}, defaultFrom, defaultTo)
+		const staticPromocodes = PromocodesQueryBuilder.buildPromocodesQuery({}, defaultFrom, defaultTo)
+		const staticPromoUsages = PromoUsagesQueryBuilder.buildPromoUsagesQuery(
+			{},
+			defaultFrom,
+			defaultTo,
+		)
 		const allStaticSql = [
 			staticUsers.sql,
 			staticUsers.countSql,
@@ -157,7 +164,7 @@ describe('AnalyticsService — Property-Based Tests', () => {
 				dateArb,
 				(search: string, dateFrom: string, dateTo: string) => {
 					// --- users ---
-					const usersResult = service.buildUsersQuery({ search, dateFrom, dateTo })
+					const usersResult = UsersQueryBuilder.buildUsersQuery({ search }, dateFrom, dateTo)
 					// The search value itself must not appear literally in SQL (only {search:String} placeholder)
 					expect(usersResult.sql).not.toContain(search)
 					expect(usersResult.countSql).not.toContain(search)
@@ -166,14 +173,22 @@ describe('AnalyticsService — Property-Based Tests', () => {
 					expect(usersResult.sql).not.toContain(dateTo)
 
 					// --- promocodes ---
-					const promoResult = service.buildPromocodesQuery({ search, dateFrom, dateTo })
+					const promoResult = PromocodesQueryBuilder.buildPromocodesQuery(
+						{ search },
+						dateFrom,
+						dateTo,
+					)
 					expect(promoResult.sql).not.toContain(search)
 					expect(promoResult.countSql).not.toContain(search)
 					expect(promoResult.sql).not.toContain(dateFrom)
 					expect(promoResult.sql).not.toContain(dateTo)
 
 					// --- promo-usages ---
-					const usagesResult = service.buildPromoUsagesQuery({ search, dateFrom, dateTo })
+					const usagesResult = PromoUsagesQueryBuilder.buildPromoUsagesQuery(
+						{ search },
+						dateFrom,
+						dateTo,
+					)
 					expect(usagesResult.sql).not.toContain(search)
 					expect(usagesResult.countSql).not.toContain(search)
 					expect(usagesResult.sql).not.toContain(dateFrom)
@@ -361,6 +376,9 @@ describe('AnalyticsService — Property-Based Tests', () => {
 
 		const endpointArbitrary = fc.constantFrom('users', 'promocodes', 'promo-usages')
 
+		// Create CacheHelper instance for testing
+		const cacheHelper = new CacheHelper(mockRedis as any)
+
 		fc.assert(
 			fc.property(endpointArbitrary, paramArbitrary, (endpoint, params) => {
 				// Shuffle key order by sorting keys in reverse then rebuilding the object
@@ -371,8 +389,8 @@ describe('AnalyticsService — Property-Based Tests', () => {
 					shuffledParams[k] = params[k]
 				}
 
-				const key1 = service.buildCacheKey(endpoint, params as Record<string, unknown>)
-				const key2 = service.buildCacheKey(endpoint, shuffledParams)
+				const key1 = cacheHelper.buildCacheKey(endpoint, params as Record<string, unknown>)
+				const key2 = cacheHelper.buildCacheKey(endpoint, shuffledParams)
 
 				expect(key1).toBe(key2)
 			}),

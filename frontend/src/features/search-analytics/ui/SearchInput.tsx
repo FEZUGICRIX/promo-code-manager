@@ -1,5 +1,5 @@
 import { Search, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 /**
  * Props для компонента SearchInput
@@ -42,10 +42,19 @@ export function SearchInput({
 	// Локальное состояние для немедленного отображения ввода
 	const [localValue, setLocalValue] = useState(value)
 
+	// Ref для хранения последнего вызванного значения
+	const lastEmittedValue = useRef(value)
+
 	// Debounce эффект - вызывает onChange после задержки
 	// **Validates: Requirements 4.1, 4.2**
 	useEffect(() => {
+		// Не вызываем onChange если значение не изменилось
+		if (localValue === lastEmittedValue.current) {
+			return
+		}
+
 		const timer = setTimeout(() => {
+			lastEmittedValue.current = localValue
 			onChange(localValue)
 		}, debounceMs)
 
@@ -54,7 +63,10 @@ export function SearchInput({
 
 	// Синхронизация с внешним значением
 	useEffect(() => {
-		setLocalValue(value)
+		if (value !== localValue) {
+			setLocalValue(value)
+			lastEmittedValue.current = value
+		}
 	}, [value])
 
 	/**
@@ -63,6 +75,7 @@ export function SearchInput({
 	 */
 	const handleClear = () => {
 		setLocalValue('')
+		lastEmittedValue.current = ''
 		onChange('')
 	}
 

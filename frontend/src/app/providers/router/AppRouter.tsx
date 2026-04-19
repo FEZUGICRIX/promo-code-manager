@@ -8,6 +8,7 @@ import { UsersPage } from '@/pages/users'
 import { PromocodesPage } from '@/pages/promocodes'
 import { OrdersPage } from '@/pages/orders'
 import { PromoUsagesPage } from '@/pages/promo-usages'
+import { UsersIntelligencePage } from '@/pages/users-intelligence'
 import { ProtectedRoute } from './ProtectedRoute'
 
 function Layout() {
@@ -42,6 +43,7 @@ export function AppRouter() {
 					<Route path='/promocodes' element={<PromocodesPage />} />
 					<Route path='/orders' element={<OrdersPage />} />
 					<Route path='/promo-usages' element={<PromoUsagesPage />} />
+					<Route path='/users-intelligence' element={<UsersIntelligencePage />} />
 				</Route>
 			</Route>
 

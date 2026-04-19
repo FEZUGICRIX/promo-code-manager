@@ -34,12 +34,15 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 } {
 	const [searchParams, setSearchParams] = useSearchParams()
 
+	// Стабилизируем defaultParams чтобы избежать бесконечных ре-рендеров
+	const stableDefaults = useMemo(() => defaultParams, [])
+
 	/**
 	 * Парсинг параметров из URL с валидацией и fallback к значениям по умолчанию
 	 */
 	const params = useMemo(() => {
 		try {
-			const parsed: any = { ...defaultParams }
+			const parsed: any = { ...stableDefaults } // TODO: убрать any!!!
 
 			// Парсинг числовых параметров
 			const page = searchParams.get('page')
@@ -95,9 +98,9 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 			return parsed as T
 		} catch (error) {
 			console.error('Error parsing URL params:', error)
-			return defaultParams
+			return stableDefaults
 		}
-	}, [searchParams, defaultParams])
+	}, [searchParams, stableDefaults])
 
 	/**
 	 * Обновление параметров с автоматическим обновлением URL
@@ -106,42 +109,54 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 	const setParams = useCallback(
 		(updates: Partial<T> | ((prev: T) => Partial<T>)) => {
 			setSearchParams((prev) => {
-				// Получаем текущие параметры
-				const currentParams = { ...defaultParams }
-				prev.forEach((value, key) => {
-					;(currentParams as any)[key] = value
-				})
+				// Получаем текущие параметры из URL, начиная с дефолтов
+				const currentParams: any = { ...stableDefaults }
+
+				// Парсим текущие значения из URL (перезаписываем дефолты)
+				const page = prev.get('page')
+				if (page) currentParams.page = parseInt(page, 10)
+
+				const pageSize = prev.get('pageSize')
+				if (pageSize) currentParams.pageSize = parseInt(pageSize, 10)
+
+				const search = prev.get('search')
+				if (search) currentParams.search = search
+
+				const sortBy = prev.get('sortBy')
+				if (sortBy) currentParams.sortBy = sortBy
+
+				const sortOrder = prev.get('sortOrder')
+				if (sortOrder) currentParams.sortOrder = sortOrder
+
+				const dateFrom = prev.get('dateFrom')
+				if (dateFrom) currentParams.dateFrom = dateFrom
+
+				const dateTo = prev.get('dateTo')
+				if (dateTo) currentParams.dateTo = dateTo
+
+				const isActive = prev.get('isActive')
+				if (isActive !== null) currentParams.isActive = isActive === 'true'
 
 				// Вычисляем обновления (поддержка functional update)
 				const resolvedUpdates =
 					typeof updates === 'function' ? updates(currentParams as T) : updates
 
-				const newParams = new URLSearchParams(prev)
+				const newParams = new URLSearchParams()
 
-				// Применяем обновления
-				Object.entries(resolvedUpdates).forEach(([key, value]) => {
-					if (value === undefined || value === null || value === '') {
-						newParams.delete(key)
-					} else {
+				// Объединяем текущие параметры с обновлениями
+				const mergedParams = { ...currentParams, ...resolvedUpdates }
+
+				// Применяем все параметры в URL (не удаляем дефолтные значения)
+				Object.entries(mergedParams).forEach(([key, value]) => {
+					if (value !== undefined && value !== null && value !== '') {
 						newParams.set(key, String(value))
 					}
 				})
 
-				// Удаляем параметры со значениями по умолчанию
-				if (newParams.get('page') === String(defaultParams.page)) {
-					newParams.delete('page')
-				}
-				if (newParams.get('pageSize') === String(defaultParams.pageSize)) {
-					newParams.delete('pageSize')
-				}
-				if (newParams.get('sortOrder') === String(defaultParams.sortOrder)) {
-					newParams.delete('sortOrder')
-				}
-
 				return newParams
 			})
 		},
-		[setSearchParams, defaultParams],
+		[setSearchParams, stableDefaults],
 	)
 
 	/**

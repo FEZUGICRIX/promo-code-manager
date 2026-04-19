@@ -31,7 +31,7 @@ api.interceptors.request.use((config) => {
 
 // --- Response Interceptor ---
 let isRefreshing = false
-let failedQueue: any[] = []
+let failedQueue: any[] = [] // TODO: убрать any!!!
 
 const processQueue = (error: any, token: string | null = null) => {
 	failedQueue.forEach((prom) => {
