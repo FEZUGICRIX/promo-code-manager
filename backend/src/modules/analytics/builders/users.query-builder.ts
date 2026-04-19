@@ -168,23 +168,19 @@ WITH
     orders_stats AS (
         SELECT
             sum(amount) as revenue,
-            uniq(userId) as unique_users_with_orders
+            -- ИСПРАВЛЕНИЕ: Считаем количество всех заказов, а не уникальных людей
+            count() as total_orders
         FROM promocode_analytics.orders
         WHERE userId != ''
-
-
-
-        AND createdAt >= {dateFrom:DateTime}
-        AND createdAt <= {dateTo:DateTime}
-
-
-
+          AND createdAt >= {dateFrom:DateTime}
+          AND createdAt <= {dateTo:DateTime}
     )
 SELECT
     (SELECT uniq(id) FROM latest_users) AS totalUsers,
     (SELECT uniqIf(id, last_status = 1) FROM latest_users) AS activeUsers,
     ifNull(
-        (SELECT revenue FROM orders_stats) / nullIf((SELECT unique_users_with_orders FROM orders_stats), 0),
+        -- ИСПРАВЛЕНИЕ: Делим выручку на количество заказов
+        (SELECT revenue FROM orders_stats) / nullIf((SELECT total_orders FROM orders_stats), 0),
         0
     ) AS averageCheck
 `.trim()

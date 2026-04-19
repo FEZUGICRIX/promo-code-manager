@@ -28,7 +28,16 @@ export const promocodeColumns: ColumnDef<AnalyticsPromocode, any>[] = [
 	col.accessor('discount', {
 		header: 'Discount',
 		enableSorting: true,
-		cell: (info) => <span className='text-gray-900'>{info.getValue()}%</span>,
+		cell: (info) => {
+			const { discount, discountType } = info.row.original
+			const symbol = discountType === 'FIXED' ? '₽' : '%'
+			return (
+				<span className='text-gray-900'>
+					{discount}
+					{symbol}
+				</span>
+			)
+		},
 	}),
 	col.display({
 		id: 'limits',

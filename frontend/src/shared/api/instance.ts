@@ -30,10 +30,15 @@ api.interceptors.request.use((config) => {
 })
 
 // --- Response Interceptor ---
-let isRefreshing = false
-let failedQueue: any[] = [] // TODO: убрать any!!!
+interface QueueEntry {
+	resolve: (token: string | null) => void
+	reject: (error: unknown) => void
+}
 
-const processQueue = (error: any, token: string | null = null) => {
+let isRefreshing = false
+let failedQueue: QueueEntry[] = []
+
+const processQueue = (error: unknown, token: string | null = null) => {
 	failedQueue.forEach((prom) => {
 		if (error) prom.reject(error)
 		else prom.resolve(token)

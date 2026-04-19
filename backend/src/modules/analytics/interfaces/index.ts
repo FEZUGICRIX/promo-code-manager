@@ -1,3 +1,4 @@
+export type { AnalyticsOrder } from './analytics-order.interface'
 export type { AnalyticsUser } from './analytics-user.interface'
 export type { AnalyticsPromocode } from './analytics-promocode.interface'
 export type { AnalyticsPromoUsage } from './analytics-promo-usage.interface'

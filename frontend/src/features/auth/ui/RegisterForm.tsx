@@ -1,21 +1,11 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../model/useAuth'
 import { getErrorMessage } from '@/shared/lib'
+import { registerSchema, type RegisterFormData as FormData } from '../model/auth.schema'
 
-// TODO: ВЫНЕСТИ В auth.schema.ts
-const schema = z.object({
-	email: z.string().email('Некорректный email'),
-	password: z.string().min(8, 'Минимум 8 символов'),
-	name: z.string().min(2, 'Минимум 2 символа'),
-	phone: z.string().min(10, 'Минимум 10 символов'),
-})
-
-type FormData = z.infer<typeof schema>
-
-// TODO?: оптимизировать?
+// TODO: Вынести в отдельный файл
 const fields = [
 	{ name: 'name' as const, label: 'Имя', type: 'text', placeholder: 'Иван Иванов' },
 	{ name: 'email' as const, label: 'Email', type: 'email', placeholder: 'you@example.com' },
@@ -32,7 +22,7 @@ export function RegisterForm() {
 		handleSubmit,
 		setError,
 		formState: { errors, isSubmitting },
-	} = useForm<FormData>({ resolver: zodResolver(schema) })
+	} = useForm<FormData>({ resolver: zodResolver(registerSchema) })
 
 	const onSubmit = async (data: FormData) => {
 		try {

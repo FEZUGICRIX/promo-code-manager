@@ -14,6 +14,9 @@ export class PromoUsage {
 	@Prop({ type: Number, required: true })
 	promocodeDiscount: number
 
+	@Prop({ type: String, required: true })
+	promocodeDiscountType: string
+
 	@Prop({ type: Types.ObjectId, ref: 'User', required: true })
 	userId: Types.ObjectId
 

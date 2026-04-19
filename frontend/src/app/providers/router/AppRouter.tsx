@@ -3,9 +3,6 @@ import { Sidebar } from '@/widgets/sidebar'
 import { authApi } from '@/features/auth'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
-import { DashboardPage } from '@/pages/dashboard'
-import { UsersPage } from '@/pages/users'
-import { PromocodesPage } from '@/pages/promocodes'
 import { OrdersPage } from '@/pages/orders'
 import { PromoUsagesPage } from '@/pages/promo-usages'
 import { UsersIntelligencePage } from '@/pages/users-intelligence'
@@ -30,18 +27,15 @@ export function AppRouter() {
 		<Routes>
 			<Route
 				path='/login'
-				element={isAuthenticated ? <Navigate to='/' replace /> : <LoginPage />}
+				element={isAuthenticated ? <Navigate to='/orders' replace /> : <LoginPage />}
 			/>
 			<Route
 				path='/register'
-				element={isAuthenticated ? <Navigate to='/' replace /> : <RegisterPage />}
+				element={isAuthenticated ? <Navigate to='/orders' replace /> : <RegisterPage />}
 			/>
 
 			<Route element={<ProtectedRoute />}>
 				<Route element={<Layout />}>
-					<Route path='/' element={<DashboardPage />} />
-					<Route path='/users' element={<UsersPage />} />
-					<Route path='/promocodes' element={<PromocodesPage />} />
 					<Route path='/orders' element={<OrdersPage />} />
 					<Route path='/promo-usages' element={<PromoUsagesPage />} />
 					<Route path='/users-intelligence' element={<UsersIntelligencePage />} />
@@ -49,7 +43,7 @@ export function AppRouter() {
 				</Route>
 			</Route>
 
-			<Route path='*' element={<Navigate to='/' replace />} />
+			<Route path='*' element={<Navigate to='/orders' replace />} />
 		</Routes>
 	)
 }

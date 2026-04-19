@@ -11,7 +11,9 @@
  * // ['analytics', '/analytics/users', { page: 1, pageSize: 10 }]
  * ```
  */
-// TODO: убрать any!!!
-export function createAnalyticsQueryKey(endpoint: string, params: any): [string, string, any] {
+export function createAnalyticsQueryKey<T extends object>(
+	endpoint: string,
+	params: T,
+): [string, string, T] {
 	return ['analytics', endpoint, params]
 }

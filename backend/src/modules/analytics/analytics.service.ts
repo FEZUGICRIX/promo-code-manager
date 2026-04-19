@@ -5,12 +5,19 @@ import { RedisService } from '@/core/redis/redis.service'
 import { PromocodesQueryDTO } from './dto/promocodes-query.dto'
 import { PromoUsagesQueryDTO } from './dto/promo-usages-query.dto'
 import { UsersQueryDTO } from './dto/users-query.dto'
+import { OrdersQueryDTO } from './dto/orders-query.dto'
 import { AnalyticsPromocode } from './interfaces/analytics-promocode.interface'
 import { AnalyticsPromoUsage } from './interfaces/analytics-promo-usage.interface'
 import { AnalyticsUser } from './interfaces/analytics-user.interface'
+import { AnalyticsOrder } from './interfaces/analytics-order.interface'
 import { PaginatedResponse } from './interfaces/paginated-response.interface'
 import { UsersSummaryResponse } from './interfaces/users-summary-response.interface'
-import { UsersQueryBuilder, PromocodesQueryBuilder, PromoUsagesQueryBuilder } from './builders'
+import {
+	UsersQueryBuilder,
+	PromocodesQueryBuilder,
+	PromoUsagesQueryBuilder,
+	OrdersQueryBuilder,
+} from './builders'
 import { CacheHelper, QueryExecutorHelper, DateRangeHelper } from './helpers'
 
 /**
@@ -100,6 +107,20 @@ export class AnalyticsService {
 				params,
 				dto,
 			)
+		})
+	}
+
+	/**
+	 * Get paginated orders with analytics data
+	 * Supports search by userName/userEmail and date range filtering
+	 */
+	async getOrders(dto: OrdersQueryDTO): Promise<PaginatedResponse<AnalyticsOrder>> {
+		const { dateFrom, dateTo } = DateRangeHelper.resolveDateRange(dto.dateFrom, dto.dateTo)
+		const cacheKey = this.cacheHelper.buildCacheKey('orders', dto as Record<string, unknown>)
+
+		return this.cacheHelper.withCache(cacheKey, async () => {
+			const { sql, countSql, params } = OrdersQueryBuilder.buildOrdersQuery(dto, dateFrom, dateTo)
+			return this.queryExecutor.executePaginatedQuery<AnalyticsOrder>(sql, countSql, params, dto)
 		})
 	}
 

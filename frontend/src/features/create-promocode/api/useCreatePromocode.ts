@@ -36,6 +36,7 @@ export function useCreatePromocode() {
 					const optimisticPromocode: AnalyticsPromocode = {
 						id: `temp-${Date.now()}`,
 						code: newPromocode.code,
+						discountType: newPromocode.discountType,
 						discount: newPromocode.discount,
 						totalLimit: newPromocode.totalLimit,
 						userLimit: newPromocode.userLimit,

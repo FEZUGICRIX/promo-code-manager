@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD } from '@nestjs/core'
+import cookieParser from 'cookie-parser'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest') as typeof import('supertest')
 
@@ -64,6 +65,7 @@ describe('AuthController (HTTP)', () => {
 		}).compile()
 
 		app = module.createNestApplication()
+		app.use(cookieParser())
 		app.useGlobalPipes(
 			new ValidationPipe({
 				whitelist: true,
@@ -83,6 +85,7 @@ describe('AuthController (HTTP)', () => {
 	describe('POST /auth/register', () => {
 		// Requirement 3.1: endpoint accepts RegisterDTO
 		// Requirement 3.8: returns 201 with user (excluding passwordHash) and tokens
+		// Note: refreshToken is set as HttpOnly cookie, not in response body
 		it('should return 201 with user and tokens on successful registration', async () => {
 			mockAuthService.register.mockResolvedValue({
 				user: mockUserResponse,
@@ -103,8 +106,9 @@ describe('AuthController (HTTP)', () => {
 					isActive: true,
 				},
 				accessToken: mockTokens.accessToken,
-				refreshToken: mockTokens.refreshToken,
 			})
+			// refreshToken is set as HttpOnly cookie, not in response body
+			expect(res.body.refreshToken).toBeUndefined()
 		})
 
 		// Requirement 3.8: passwordHash must not appear in the response
@@ -160,7 +164,8 @@ describe('AuthController (HTTP)', () => {
 	// ── POST /auth/login ──────────────────────────────────────────────────────
 
 	describe('POST /auth/login', () => {
-		// Requirement 4.7: returns 200 with accessToken and refreshToken on valid login
+		// Requirement 4.7: returns 200 with accessToken on valid login
+		// Note: refreshToken is set as HttpOnly cookie, not in response body
 		it('should return 200 with accessToken and refreshToken on valid credentials', async () => {
 			mockAuthService.login.mockResolvedValue(mockTokens)
 
@@ -171,8 +176,9 @@ describe('AuthController (HTTP)', () => {
 
 			expect(res.body).toMatchObject({
 				accessToken: mockTokens.accessToken,
-				refreshToken: mockTokens.refreshToken,
 			})
+			// refreshToken is set as HttpOnly cookie, not in response body
+			expect(res.body.refreshToken).toBeUndefined()
 		})
 
 		// Requirement 4.4: returns 401 with "Invalid credentials" for non-existent email
@@ -236,12 +242,13 @@ describe('AuthController (HTTP)', () => {
 
 	describe('POST /auth/refresh', () => {
 		// Requirement 5.2: returns 200 with new accessToken for valid refresh token
+		// Note: refreshToken is read from HttpOnly cookie, not from request body
 		it('should return 200 with new accessToken for a valid refresh token', async () => {
 			mockAuthService.refreshToken.mockResolvedValue({ accessToken: 'new.access.token' })
 
 			const res = await request(app.getHttpServer())
 				.post('/auth/refresh')
-				.send({ refreshToken: 'valid.refresh.token' })
+				.set('Cookie', 'refreshToken=valid.refresh.token')
 				.expect(200)
 
 			expect(res.body).toMatchObject({ accessToken: 'new.access.token' })
@@ -255,7 +262,7 @@ describe('AuthController (HTTP)', () => {
 
 			const res = await request(app.getHttpServer())
 				.post('/auth/refresh')
-				.send({ refreshToken: 'invalid.token' })
+				.set('Cookie', 'refreshToken=invalid.token')
 				.expect(401)
 
 			expect(res.body.message).toBe('Invalid or expired refresh token')
@@ -269,7 +276,7 @@ describe('AuthController (HTTP)', () => {
 
 			const res = await request(app.getHttpServer())
 				.post('/auth/refresh')
-				.send({ refreshToken: 'expired.jwt.token' })
+				.set('Cookie', 'refreshToken=expired.jwt.token')
 				.expect(401)
 
 			expect(res.body.message).toBe('Invalid or expired refresh token')
@@ -283,7 +290,7 @@ describe('AuthController (HTTP)', () => {
 
 			const res = await request(app.getHttpServer())
 				.post('/auth/refresh')
-				.send({ refreshToken: 'not.a.valid.jwt.at.all' })
+				.set('Cookie', 'refreshToken=not.a.valid.jwt.at.all')
 				.expect(401)
 
 			// Must be a proper HTTP 401, not an unhandled 500
@@ -291,8 +298,11 @@ describe('AuthController (HTTP)', () => {
 			expect(res.body.message).toBe('Invalid or expired refresh token')
 		})
 
-		it('should return 400 when refreshToken field is missing', async () => {
-			await request(app.getHttpServer()).post('/auth/refresh').send({}).expect(400)
+		it('should return 401 when refreshToken cookie is missing', async () => {
+			// No cookie set — controller returns 401 with "Refresh token not found"
+			const res = await request(app.getHttpServer()).post('/auth/refresh').expect(401)
+
+			expect(res.body.message).toBe('Refresh token not found')
 		})
 	})
 })

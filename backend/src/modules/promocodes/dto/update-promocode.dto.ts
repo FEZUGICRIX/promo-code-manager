@@ -1,11 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsBoolean, IsDateString, IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator'
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, Min } from 'class-validator'
+import { DiscountType } from '../schemas/promocode.schema'
 
 export class UpdatePromocodeDTO {
 	@IsOptional()
+	@IsEnum(DiscountType)
+	@ApiProperty({ enum: DiscountType, required: false })
+	discountType?: DiscountType
+
+	@IsOptional()
 	@IsNumber()
 	@Min(1)
-	@Max(100)
 	@ApiProperty({ example: 20, required: false })
 	discount?: number
 

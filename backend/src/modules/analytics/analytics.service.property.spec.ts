@@ -368,8 +368,12 @@ describe('AnalyticsService — Property-Based Tests', () => {
 	// -------------------------------------------------------------------------
 	it('Property 1: buildCacheKey returns the same string regardless of key order', () => {
 		// Generator: record with 1–8 string keys mapped to non-null/non-undefined values
+		// Exclude prototype-polluting keys like __proto__, constructor, prototype
+		const safeKeyArb = fc
+			.string({ minLength: 1, maxLength: 10 })
+			.filter((k) => !['__proto__', 'constructor', 'prototype'].includes(k))
 		const paramArbitrary = fc.dictionary(
-			fc.string({ minLength: 1, maxLength: 10 }),
+			safeKeyArb,
 			fc.oneof(fc.string({ minLength: 0, maxLength: 20 }), fc.integer(), fc.boolean()),
 			{ minKeys: 1, maxKeys: 8 },
 		)

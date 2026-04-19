@@ -1,6 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 
+export enum DiscountType {
+	PERCENTAGE = 'PERCENTAGE',
+	FIXED = 'FIXED',
+}
+
 export type PromocodeDocument = HydratedDocument<Promocode>
 
 @Schema({ timestamps: true, versionKey: false })
@@ -8,7 +13,10 @@ export class Promocode {
 	@Prop({ type: String, required: true, unique: true, trim: true })
 	code: string
 
-	@Prop({ type: Number, required: true, min: 1, max: 100 })
+	@Prop({ type: String, enum: DiscountType, default: DiscountType.PERCENTAGE })
+	discountType: DiscountType
+
+	@Prop({ type: Number, required: true, min: 1 })
 	discount: number
 
 	@Prop({ type: Number, required: true, min: 1 })

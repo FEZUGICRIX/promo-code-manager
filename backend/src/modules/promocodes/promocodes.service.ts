@@ -89,6 +89,7 @@ export class PromocodesService {
 			const record: Record<string, unknown> = {
 				id: promo._id.toString(),
 				code: promo.code,
+				discountType: promo.discountType,
 				discount: promo.discount,
 				totalLimit: promo.totalLimit,
 				userLimit: promo.userLimit,

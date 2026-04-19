@@ -33,7 +33,6 @@ interface DateRangePickerProps {
  * **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.10, 5.11**
  */
 export function DateRangePicker({ dateFrom, dateTo, onChange }: DateRangePickerProps) {
-	// TODO: чекнуть
 	const [selectedPreset, setSelectedPreset] = useState<string>(DATE_PRESETS.CUSTOM)
 	const [localDateFrom, setLocalDateFrom] = useState<string>(dateFrom || '')
 	const [localDateTo, setLocalDateTo] = useState<string>(dateTo || '')

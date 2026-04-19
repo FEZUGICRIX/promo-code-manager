@@ -17,6 +17,7 @@ ORDER BY (createdAt, id);
 CREATE TABLE IF NOT EXISTS promocode_analytics.promocodes (
     id String,
     code String,
+    discountType String,
     discount Float32,
     totalLimit Int32,
     userLimit Int32,
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS promocode_analytics.promo_usages (
     promocodeId String,
     promocodeCode String,
     promocodeDiscount Float32,
+    promocodeDiscountType String,
     userId String,
     userName String,
     userEmail String,

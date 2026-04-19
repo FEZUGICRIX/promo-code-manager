@@ -1,11 +1,17 @@
 // ─── Promocode Entity Types ──────────────────────────────────────────────────
 
+export enum DiscountType {
+	PERCENTAGE = 'PERCENTAGE',
+	FIXED = 'FIXED',
+}
+
 /**
  * Promocode entity from MongoDB
  */
 export interface Promocode {
 	_id: string
 	code: string
+	discountType: DiscountType
 	discount: number
 	totalLimit: number
 	userLimit: number
@@ -21,6 +27,7 @@ export interface Promocode {
  */
 export interface PromocodeFormData {
 	code: string
+	discountType: DiscountType
 	discount: number
 	totalLimit: number
 	userLimit: number
@@ -33,6 +40,7 @@ export interface PromocodeFormData {
  */
 export interface CreatePromocodeDTO {
 	code: string
+	discountType: DiscountType
 	discount: number
 	totalLimit: number
 	userLimit: number
@@ -44,6 +52,7 @@ export interface CreatePromocodeDTO {
  * Promocode Update DTO (sent to backend)
  */
 export interface UpdatePromocodeDTO {
+	discountType?: DiscountType
 	discount?: number
 	totalLimit?: number
 	userLimit?: number

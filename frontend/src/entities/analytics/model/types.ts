@@ -115,6 +115,7 @@ export interface PromocodesAnalyticsParams extends BaseAnalyticsParams {
 export interface AnalyticsPromocode {
 	id: string
 	code: string
+	discountType: string
 	discount: number
 	totalLimit: number
 	userLimit: number
@@ -164,11 +165,47 @@ export interface AnalyticsPromoUsage {
 	id: string
 	promocodeCode: string
 	promocodeDiscount: number
+	promocodeDiscountType: string
 	userName: string
 	userEmail: string
 	orderId: string
 	orderAmount: number
 	discountAmount: number
+	createdAt: string
+}
+
+// ─── Orders Analytics ─────────────────────────────────────────────────────────
+
+/**
+ * Допустимые колонки для сортировки в Orders Analytics
+ */
+export const ORDERS_SORT_COLUMNS = ['id', 'amount', 'discount', 'finalAmount', 'createdAt'] as const
+
+/**
+ * Тип для колонок сортировки Orders Analytics
+ */
+export type OrdersSortColumn = (typeof ORDERS_SORT_COLUMNS)[number]
+
+/**
+ * Параметры запроса для Orders Analytics
+ */
+export interface OrdersAnalyticsParams extends BaseAnalyticsParams {
+	sortBy: OrdersSortColumn
+}
+
+/**
+ * Интерфейс заказа в аналитике
+ */
+export interface AnalyticsOrder {
+	id: string
+	userId: string
+	userName: string
+	userEmail: string
+	amount: number
+	discount: number
+	finalAmount: number
+	promocodeId?: string | null
+	promocodeCode?: string | null
 	createdAt: string
 }
 

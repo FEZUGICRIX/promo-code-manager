@@ -42,35 +42,27 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 	 */
 	const params = useMemo(() => {
 		try {
-			const parsed: any = { ...stableDefaults } // TODO: убрать any!!!
+			const parsed = { ...stableDefaults } as Record<string, unknown>
 
 			// Парсинг числовых параметров
 			const page = searchParams.get('page')
 			if (page) {
 				const pageNum = parseInt(page, 10)
-				if (!isNaN(pageNum) && pageNum > 0) {
-					parsed.page = pageNum
-				}
+				if (!isNaN(pageNum) && pageNum > 0) parsed.page = pageNum
 			}
 
 			const pageSize = searchParams.get('pageSize')
 			if (pageSize) {
 				const pageSizeNum = parseInt(pageSize, 10)
-				if (!isNaN(pageSizeNum) && pageSizeNum > 0) {
-					parsed.pageSize = pageSizeNum
-				}
+				if (!isNaN(pageSizeNum) && pageSizeNum > 0) parsed.pageSize = pageSizeNum
 			}
 
 			// Парсинг строковых параметров
 			const search = searchParams.get('search')
-			if (search) {
-				parsed.search = search
-			}
+			if (search) parsed.search = search
 
 			const sortBy = searchParams.get('sortBy')
-			if (sortBy) {
-				parsed.sortBy = sortBy
-			}
+			if (sortBy) parsed.sortBy = sortBy
 
 			// Парсинг enum параметров (sortOrder)
 			const sortOrder = searchParams.get('sortOrder')
@@ -80,20 +72,14 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 
 			// Парсинг дат (ISO string format)
 			const dateFrom = searchParams.get('dateFrom')
-			if (dateFrom) {
-				parsed.dateFrom = dateFrom
-			}
+			if (dateFrom) parsed.dateFrom = dateFrom
 
 			const dateTo = searchParams.get('dateTo')
-			if (dateTo) {
-				parsed.dateTo = dateTo
-			}
+			if (dateTo) parsed.dateTo = dateTo
 
 			// Парсинг boolean параметров (isActive)
 			const isActive = searchParams.get('isActive')
-			if (isActive !== null) {
-				parsed.isActive = isActive === 'true'
-			}
+			if (isActive !== null) parsed.isActive = isActive === 'true'
 
 			return parsed as T
 		} catch (error) {
@@ -110,7 +96,7 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 		(updates: Partial<T> | ((prev: T) => Partial<T>)) => {
 			setSearchParams((prev) => {
 				// Получаем текущие параметры из URL, начиная с дефолтов
-				const currentParams: any = { ...stableDefaults }
+				const currentParams = { ...stableDefaults } as Record<string, unknown>
 
 				// Парсим текущие значения из URL (перезаписываем дефолты)
 				const page = prev.get('page')
@@ -126,7 +112,7 @@ export function useAnalyticsParams<T extends BaseAnalyticsParams>(
 				if (sortBy) currentParams.sortBy = sortBy
 
 				const sortOrder = prev.get('sortOrder')
-				if (sortOrder) currentParams.sortOrder = sortOrder
+				if (sortOrder) currentParams.sortOrder = sortOrder as SortOrder
 
 				const dateFrom = prev.get('dateFrom')
 				if (dateFrom) currentParams.dateFrom = dateFrom

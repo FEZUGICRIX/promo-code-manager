@@ -111,13 +111,20 @@ export class OrdersService {
 		try {
 			// Step 9 [LOCKED]: create PromoUsage and update Order
 			const user = await this.userModel.findById(order.userId)
-			const discountAmount = (order.amount * promocode.discount) / 100
+
+			// Calculate discount based on type
+			const rawDiscount =
+				promocode.discountType === 'FIXED'
+					? promocode.discount
+					: (order.amount * promocode.discount) / 100
+			const discountAmount = Math.min(rawDiscount, order.amount)
 			const finalAmount = order.amount - discountAmount
 
 			promoUsage = await this.promoUsageModel.create({
 				promocodeId,
 				promocodeCode: promocode.code,
 				promocodeDiscount: promocode.discount,
+				promocodeDiscountType: promocode.discountType,
 				userId: new Types.ObjectId(userId),
 				userName: user?.name ?? '',
 				userEmail: user?.email ?? '',
@@ -128,6 +135,7 @@ export class OrdersService {
 
 			await this.orderModel.findByIdAndUpdate(orderId, {
 				promocodeId,
+				promocodeCode: promocode.code,
 				discount: promocode.discount,
 				discountAmount,
 				finalAmount,
@@ -145,7 +153,7 @@ export class OrdersService {
 	}
 
 	private async syncPromoUsageToClickHouse(
-		_order: OrderDocument,
+		order: OrderDocument,
 		promoUsage: PromoUsageDocument,
 	): Promise<void> {
 		try {
@@ -156,6 +164,7 @@ export class OrdersService {
 					promocodeId: promoUsage.promocodeId.toString(),
 					promocodeCode: promoUsage.promocodeCode,
 					promocodeDiscount: promoUsage.promocodeDiscount,
+					promocodeDiscountType: promoUsage.promocodeDiscountType,
 					userId: promoUsage.userId.toString(),
 					userName: promoUsage.userName,
 					userEmail: promoUsage.userEmail,
@@ -168,6 +177,32 @@ export class OrdersService {
 		} catch (err: unknown) {
 			this.logger.error(
 				`Failed to sync promo usage ${promoUsage._id.toString()} to ClickHouse: ${err instanceof Error ? err.message : String(err)}`,
+			)
+		}
+
+		// Update the order record in ClickHouse with discount/promocode fields
+		try {
+			const db = this.clickhouseService['database'] as string
+			await this.clickhouseService.command(
+				`ALTER TABLE ${db}.orders UPDATE
+					discount = {discount:Float32},
+					finalAmount = {finalAmount:Float32},
+					promocodeId = {promocodeId:String},
+					promocodeCode = {promocodeCode:String},
+					updatedAt = {updatedAt:DateTime}
+				WHERE id = {id:String}`,
+				{
+					discount: order.discount,
+					finalAmount: order.finalAmount,
+					promocodeId: order.promocodeId ? order.promocodeId.toString() : '',
+					promocodeCode: order.promocodeCode ?? '',
+					updatedAt: this.formatDate(new Date()),
+					id: order._id.toString(),
+				},
+			)
+		} catch (err: unknown) {
+			this.logger.error(
+				`Failed to update order ${order._id.toString()} in ClickHouse after promocode apply: ${err instanceof Error ? err.message : String(err)}`,
 			)
 		}
 	}
@@ -190,7 +225,7 @@ export class OrdersService {
 					discount: order.discount,
 					finalAmount: order.finalAmount,
 					promocodeId: order.promocodeId ? order.promocodeId.toString() : null,
-					promocodeCode: null,
+					promocodeCode: order.promocodeCode ?? null,
 					createdAt: this.formatDate(doc.createdAt),
 					updatedAt: this.formatDate(doc.updatedAt),
 				},

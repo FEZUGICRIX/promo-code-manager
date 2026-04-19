@@ -1,17 +1,9 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../model/useAuth'
 import { getErrorMessage } from '@/shared/lib'
-
-// TODO: ВЫНЕСТИ В auth.schema.ts
-const schema = z.object({
-	email: z.string().email('Некорректный email'),
-	password: z.string().min(1, 'Введите пароль'),
-})
-
-type FormData = z.infer<typeof schema>
+import { loginSchema, type LoginFormData as FormData } from '../model/auth.schema'
 
 export function LoginForm() {
 	const { login } = useAuth()
@@ -22,7 +14,7 @@ export function LoginForm() {
 		handleSubmit,
 		setError,
 		formState: { errors, isSubmitting },
-	} = useForm<FormData>({ resolver: zodResolver(schema) })
+	} = useForm<FormData>({ resolver: zodResolver(loginSchema) })
 
 	const onSubmit = async (data: FormData) => {
 		try {

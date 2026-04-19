@@ -54,6 +54,17 @@ export class ClickhouseService implements OnModuleInit {
 	}
 
 	/**
+	 * Выполняет DDL или мутацию (ALTER TABLE ... UPDATE/DELETE).
+	 */
+	async command(query: string, params?: Record<string, unknown>): Promise<void> {
+		try {
+			await this.client.command({ query, query_params: params })
+		} catch (err: unknown) {
+			throw this.wrapError('ClickHouse command failed', err)
+		}
+	}
+
+	/**
 	 * Идемпотентная инициализация: создаёт БД и все четыре таблицы при старте.
 	 * Использует command() для DDL-операций согласно официальной документации.
 	 */
@@ -65,6 +76,11 @@ export class ClickhouseService implements OnModuleInit {
 
 			for (const ddl of this.getDdlStatements()) {
 				await this.client.command({ query: ddl })
+			}
+
+			// Idempotent migrations — add new columns to existing tables
+			for (const migration of this.getMigrations()) {
+				await this.client.command({ query: migration })
 			}
 
 			this.logger.log('ClickHouse tables initialized successfully')
@@ -100,6 +116,7 @@ export class ClickhouseService implements OnModuleInit {
 			`CREATE TABLE IF NOT EXISTS ${db}.promocodes (
 				id String,
 				code String,
+				discountType String,
 				discount Float32,
 				totalLimit Int32,
 				userLimit Int32,
@@ -131,6 +148,7 @@ export class ClickhouseService implements OnModuleInit {
 				promocodeId String,
 				promocodeCode String,
 				promocodeDiscount Float32,
+				promocodeDiscountType String,
 				userId String,
 				userName String,
 				userEmail String,
@@ -140,6 +158,18 @@ export class ClickhouseService implements OnModuleInit {
 				createdAt DateTime
 			) ENGINE = MergeTree()
 			ORDER BY (createdAt, id)`,
+		]
+	}
+
+	/**
+	 * Idempotent ALTER TABLE migrations for adding new columns to existing tables.
+	 * Safe to run on every startup — IF NOT EXISTS prevents duplicate column errors.
+	 */
+	private getMigrations(): string[] {
+		const db = this.database
+		return [
+			`ALTER TABLE ${db}.promocodes ADD COLUMN IF NOT EXISTS discountType String DEFAULT 'PERCENTAGE'`,
+			`ALTER TABLE ${db}.promo_usages ADD COLUMN IF NOT EXISTS promocodeDiscountType String DEFAULT 'PERCENTAGE'`,
 		]
 	}
 }

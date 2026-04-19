@@ -1,17 +1,8 @@
 import { z } from 'zod'
+import { DiscountType } from '@/entities/promocode/model/types'
 
 /**
  * Zod validation schema for Promocode Form
- *
- * Validates:
- * - code: 3-20 alphanumeric characters
- * - discount: 1-100
- * - totalLimit: positive integer
- * - userLimit: positive integer
- * - dateTo: future date
- * - dateFrom: optional, must be before dateTo if provided
- *
- * Requirements: 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 3.1
  */
 export const promocodeValidationSchema = z
 	.object({
@@ -21,13 +12,16 @@ export const promocodeValidationSchema = z
 			.max(20, 'Код должен содержать максимум 20 символов')
 			.regex(/^[A-Za-z0-9]+$/, 'Код может содержать только буквы и цифры'),
 
+		discountType: z.nativeEnum(DiscountType, {
+			required_error: 'Тип скидки обязателен',
+		}),
+
 		discount: z
 			.number({
 				required_error: 'Скидка обязательна',
 				invalid_type_error: 'Скидка должна быть числом',
 			})
-			.min(1, 'Скидка должна быть от 1 до 100')
-			.max(100, 'Скидка должна быть от 1 до 100'),
+			.min(1, 'Скидка должна быть больше 0'),
 
 		totalLimit: z
 			.number({
@@ -53,14 +47,11 @@ export const promocodeValidationSchema = z
 				(date) => {
 					const expirationDate = new Date(date)
 					const now = new Date()
-					// Reset time to compare only dates
 					now.setHours(0, 0, 0, 0)
 					expirationDate.setHours(0, 0, 0, 0)
 					return expirationDate > now
 				},
-				{
-					message: 'Дата истечения должна быть в будущем',
-				},
+				{ message: 'Дата истечения должна быть в будущем' },
 			),
 
 		dateFrom: z
@@ -71,21 +62,21 @@ export const promocodeValidationSchema = z
 	})
 	.refine(
 		(data) => {
-			// If dateFrom is provided, validate that it's before dateTo
-			if (data.dateFrom && data.dateTo) {
-				const fromDate = new Date(data.dateFrom)
-				const toDate = new Date(data.dateTo)
-				return fromDate < toDate
+			if (data.discountType === DiscountType.PERCENTAGE) {
+				return data.discount <= 100
 			}
 			return true
 		},
-		{
-			message: 'Дата начала должна быть меньше даты истечения',
-			path: ['dateFrom'],
+		{ message: 'Процентная скидка не может превышать 100%', path: ['discount'] },
+	)
+	.refine(
+		(data) => {
+			if (data.dateFrom && data.dateTo) {
+				return new Date(data.dateFrom) < new Date(data.dateTo)
+			}
+			return true
 		},
+		{ message: 'Дата начала должна быть меньше даты истечения', path: ['dateFrom'] },
 	)
 
-/**
- * Type inferred from the validation schema
- */
 export type PromocodeFormValidation = z.infer<typeof promocodeValidationSchema>

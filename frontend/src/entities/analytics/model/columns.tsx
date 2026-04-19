@@ -1,6 +1,7 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
 import { formatDate, formatCurrency } from '@/shared/lib/formatters'
 import { UserStatusBadge } from '../ui/UserStatusBadge'
+import { DeactivateUserButton } from '@/features/deactivate-user'
 import type { AnalyticsUser } from './types'
 
 const col = createColumnHelper<AnalyticsUser>()
@@ -52,5 +53,16 @@ export const usersTableColumns: ColumnDef<AnalyticsUser, any>[] = [
 		header: 'Promo Uses',
 		enableSorting: true,
 		cell: (info) => <span className='text-gray-900'>{info.getValue()}</span>,
+	}),
+	col.display({
+		id: 'actions',
+		header: 'Actions',
+		enableSorting: false,
+		cell: (info) => {
+			if (info.row.original.isActive) {
+				return <DeactivateUserButton userId={info.row.original.id} />
+			}
+			return null
+		},
 	}),
 ]

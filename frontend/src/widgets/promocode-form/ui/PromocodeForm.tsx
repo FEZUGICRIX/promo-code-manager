@@ -49,6 +49,7 @@ export function PromocodeForm({ promocode, onSuccess, onCancel }: PromocodeFormP
 	const {
 		register,
 		handleSubmit,
+		watch,
 		formState: { errors, isValid },
 	} = usePromocodeForm(promocode)
 
@@ -60,10 +61,10 @@ export function PromocodeForm({ promocode, onSuccess, onCancel }: PromocodeFormP
 	const onSubmit = async (data: PromocodeFormData) => {
 		try {
 			if (isEditMode && promocode) {
-				// Update existing promocode (Requirement 2.4, 2.7)
 				await updateMutation.mutateAsync({
 					id: promocode.id,
 					data: {
+						discountType: data.discountType,
 						discount: data.discount,
 						totalLimit: data.totalLimit,
 						userLimit: data.userLimit,
@@ -72,9 +73,9 @@ export function PromocodeForm({ promocode, onSuccess, onCancel }: PromocodeFormP
 					},
 				})
 			} else {
-				// Create new promocode (Requirement 1.10, 1.14)
 				await createMutation.mutateAsync({
 					code: data.code,
+					discountType: data.discountType,
 					discount: data.discount,
 					totalLimit: data.totalLimit,
 					userLimit: data.userLimit,
@@ -102,7 +103,12 @@ export function PromocodeForm({ promocode, onSuccess, onCancel }: PromocodeFormP
 			</h2>
 
 			{/* Form Fields */}
-			<PromocodeFormFields register={register} errors={errors} isEditMode={isEditMode} />
+			<PromocodeFormFields
+				register={register}
+				errors={errors}
+				isEditMode={isEditMode}
+				watch={watch}
+			/>
 
 			{/* Form Actions */}
 			<div className='flex gap-3 pt-4'>

@@ -19,6 +19,9 @@ export class Order {
 
 	@Prop({ type: Types.ObjectId, ref: 'Promocode', required: false })
 	promocodeId?: Types.ObjectId
+
+	@Prop({ type: String, required: false })
+	promocodeCode?: string
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order)

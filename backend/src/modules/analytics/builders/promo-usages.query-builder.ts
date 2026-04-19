@@ -48,6 +48,7 @@ SELECT
     id,
     promocodeCode,
     promocodeDiscount,
+    promocodeDiscountType,
     userName,
     userEmail,
     orderId,

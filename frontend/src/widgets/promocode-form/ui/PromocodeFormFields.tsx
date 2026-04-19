@@ -1,40 +1,23 @@
-import { UseFormRegister, FieldErrors } from 'react-hook-form'
+import { UseFormRegister, FieldErrors, UseFormWatch } from 'react-hook-form'
 import type { PromocodeFormData } from '@/entities/promocode/model/types'
+import { DiscountType } from '@/entities/promocode/model/types'
 
-/**
- * Props for PromocodeFormFields component
- */
 interface PromocodeFormFieldsProps {
-	/**
-	 * react-hook-form register function
-	 */
 	register: UseFormRegister<PromocodeFormData>
-
-	/**
-	 * Form validation errors
-	 */
 	errors: FieldErrors<PromocodeFormData>
-
-	/**
-	 * Whether the form is in edit mode
-	 */
 	isEditMode: boolean
+	watch: UseFormWatch<PromocodeFormData>
 }
 
-/**
- * Form fields for Promocode Form
- *
- * Renders all form fields with validation error display:
- * - Code (readonly in edit mode)
- * - Discount
- * - TotalLimit
- * - UserLimit
- * - DateTo (Expiration)
- * - DateFrom (optional)
- *
- * Requirements: 1.2, 1.3, 2.3, 3.3, 3.4
- */
-export function PromocodeFormFields({ register, errors, isEditMode }: PromocodeFormFieldsProps) {
+export function PromocodeFormFields({
+	register,
+	errors,
+	isEditMode,
+	watch,
+}: PromocodeFormFieldsProps) {
+	const discountType = watch('discountType')
+	const isPercentage = discountType === DiscountType.PERCENTAGE
+
 	return (
 		<div className='space-y-4'>
 			{/* Code Field */}
@@ -55,23 +38,46 @@ export function PromocodeFormFields({ register, errors, isEditMode }: PromocodeF
 				{errors.code && <p className='text-sm text-red-600 mt-1'>{errors.code.message}</p>}
 			</div>
 
-			{/* Discount Field */}
-			<div>
-				<label htmlFor='discount' className='block text-sm font-medium text-gray-700 mb-1'>
-					Скидка (%) *
-				</label>
-				<input
-					id='discount'
-					type='number'
-					{...register('discount', { valueAsNumber: true })}
-					className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-						errors.discount ? 'border-red-500' : 'border-gray-300'
-					}`}
-					placeholder='От 1 до 100'
-					min='1'
-					max='100'
-				/>
-				{errors.discount && <p className='text-sm text-red-600 mt-1'>{errors.discount.message}</p>}
+			{/* Discount Type + Discount Fields */}
+			<div className='flex gap-3'>
+				<div className='w-40 shrink-0'>
+					<label htmlFor='discountType' className='block text-sm font-medium text-gray-700 mb-1'>
+						Тип скидки *
+					</label>
+					<select
+						id='discountType'
+						{...register('discountType')}
+						className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${
+							errors.discountType ? 'border-red-500' : 'border-gray-300'
+						}`}
+					>
+						<option value={DiscountType.PERCENTAGE}>% Процент</option>
+						<option value={DiscountType.FIXED}>₽ Фиксированная</option>
+					</select>
+					{errors.discountType && (
+						<p className='text-sm text-red-600 mt-1'>{errors.discountType.message}</p>
+					)}
+				</div>
+
+				<div className='flex-1'>
+					<label htmlFor='discount' className='block text-sm font-medium text-gray-700 mb-1'>
+						Скидка {isPercentage ? '(%)' : '(₽)'} *
+					</label>
+					<input
+						id='discount'
+						type='number'
+						{...register('discount', { valueAsNumber: true })}
+						className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+							errors.discount ? 'border-red-500' : 'border-gray-300'
+						}`}
+						placeholder={isPercentage ? 'От 1 до 100' : 'Сумма в рублях'}
+						min='1'
+						max={isPercentage ? '100' : undefined}
+					/>
+					{errors.discount && (
+						<p className='text-sm text-red-600 mt-1'>{errors.discount.message}</p>
+					)}
+				</div>
 			</div>
 
 			{/* Total Limit Field */}

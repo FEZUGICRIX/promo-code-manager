@@ -3,13 +3,14 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
 import { AnalyticsService } from './analytics.service'
 import type {
+	AnalyticsOrder,
 	AnalyticsPromoUsage,
 	AnalyticsPromocode,
 	AnalyticsUser,
 	PaginatedResponse,
 	UsersSummaryResponse,
 } from './interfaces'
-import { PromoUsagesQueryDTO, PromocodesQueryDTO, UsersQueryDTO } from './dto'
+import { OrdersQueryDTO, PromoUsagesQueryDTO, PromocodesQueryDTO, UsersQueryDTO } from './dto'
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
@@ -31,6 +32,11 @@ export class AnalyticsController {
 		@Query() dto: PromoUsagesQueryDTO,
 	): Promise<PaginatedResponse<AnalyticsPromoUsage>> {
 		return this.analyticsService.getPromoUsages(dto)
+	}
+
+	@Get('orders')
+	getOrders(@Query() dto: OrdersQueryDTO): Promise<PaginatedResponse<AnalyticsOrder>> {
+		return this.analyticsService.getOrders(dto)
 	}
 
 	@Get('users/summary')

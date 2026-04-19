@@ -7,7 +7,6 @@ services:
     restart: unless-stopped
     ports:
       - '27017:27017'
-    # TODO: перенести все env переменные в .env файл
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
@@ -27,7 +26,6 @@ services:
     ports:
       - '8123:8123'
       - '9000:9000'
-    # TODO: перенести все env переменные в .env файл
     environment:
       CLICKHOUSE_DB: promocode_analytics
       CLICKHOUSE_USER: default
@@ -64,7 +62,6 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
-    # TODO: перенести все env переменные в .env файл
     environment:
       NODE_ENV: development
       PORT: 3000
@@ -88,26 +85,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
 
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
     container_name: promocode-frontend
     restart: unless-stopped
     ports:
-      - '5173:5173'
-    # TODO: перенести все env переменные в .env файл
-    environment:
-      VITE_API_URL: http://localhost:3000
+      - '5173:80'
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
 
 volumes:
   mongodb_data:

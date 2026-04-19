@@ -1,14 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger'
 import {
 	IsDateString,
+	IsEnum,
 	IsInt,
 	IsNotEmpty,
 	IsNumber,
 	IsOptional,
 	IsString,
-	Max,
 	Min,
 } from 'class-validator'
+import { DiscountType } from '../schemas/promocode.schema'
 
 export class CreatePromocodeDTO {
 	@IsString()
@@ -16,9 +17,13 @@ export class CreatePromocodeDTO {
 	@ApiProperty({ example: 'SUMMER20' })
 	code: string
 
+	@IsOptional()
+	@IsEnum(DiscountType)
+	@ApiProperty({ enum: DiscountType, default: DiscountType.PERCENTAGE, required: false })
+	discountType?: DiscountType
+
 	@IsNumber()
 	@Min(1)
-	@Max(100)
 	@ApiProperty({ example: 20 })
 	discount: number
 
